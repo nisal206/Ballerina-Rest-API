@@ -1,0 +1,10 @@
+
+import ballerinax/mysql;
+
+public final mysql:Client dbClient = check new (
+    host = "localhost",
+    port = 3306,
+    user = "root",
+    password = "Nisal",
+    database = "userdb"
+);
