@@ -1,12 +1,18 @@
-// service.bal
-
 import ballerina/http;
 import ballerina/sql;
 import ballerina/log;
 import user_crud_service.database;
 
+# Service for managing user CRUD operations.
+#
+# + service - HTTP listener on port 8080
 service /users on new http:Listener(8080) {
 
+    # Add a new user to the system.
+    #
+    # + caller - HTTP caller object
+    # + req - HTTP request containing user data
+    # + return - Error if operation fails
     resource function post addUser(http:Caller caller, http:Request req) returns error? {
         json newUserJson = check req.getJsonPayload();
         http:Response res = new;
@@ -60,7 +66,6 @@ service /users on new http:Listener(8080) {
             COUNT(CASE WHEN email = ${email} THEN 1 END) AS email_count
         FROM users`;
 
-
         stream<record { int id_count; int email_count; }, sql:Error?> resultStream = database:dbClient->query(checkQuery);
         var cresult = resultStream.next();
 
@@ -96,6 +101,10 @@ service /users on new http:Listener(8080) {
         check caller->respond(res);
     }
 
+    # Retrieve all users from the system.
+    #
+    # + caller - HTTP caller object
+    # + return - Error if operation fails
     resource function get .(http:Caller caller) returns error? {
         stream <database:User, sql:Error?> resultStream = database:getAllUsers();
 
@@ -127,6 +136,11 @@ service /users on new http:Listener(8080) {
         check caller->respond(res);
     }
 
+    # Retrieve a specific user by ID.
+    #
+    # + id - User ID to retrieve
+    # + caller - HTTP caller object
+    # + return - Error if operation fails
     resource function get [int id](http:Caller caller) returns error? {
         database:User|sql:Error result = database:getUserById(id);
 
@@ -144,6 +158,12 @@ service /users on new http:Listener(8080) {
         check caller->respond(res);
     }
 
+    # Update an existing user's information.
+    #
+    # + id - User ID to update
+    # + caller - HTTP caller object
+    # + req - HTTP request containing updated user data
+    # + return - Error if operation fails
     resource function put updateUser/[int id](http:Caller caller, http:Request req) returns error? {
         json|error userJson = req.getJsonPayload();
         http:Response res = new;
@@ -159,7 +179,6 @@ service /users on new http:Listener(8080) {
                 return;
             }
 
-            
             sql:ExecutionResult result = check database:updateUser( id, name , email);
             
             // Check if any rows were affected
@@ -178,6 +197,12 @@ service /users on new http:Listener(8080) {
         }
     }
 
+    # Delete a user from the system.
+    #
+    # + id - User ID to delete
+    # + caller - HTTP caller object
+    # + req - HTTP request
+    # + return - Error if operation fails
     resource function delete deleteUser/[int id](http:Caller caller, http:Request req) returns error? {
         sql:ExecutionResult result = check database:deleteUser(id);
 
@@ -192,12 +217,16 @@ service /users on new http:Listener(8080) {
         check caller->respond(res);
     }
 
+    # Search users by name.
+    #
+    # + caller - HTTP caller object
+    # + req - HTTP request containing search query
+    # + return - Error if operation fails
     resource function get searchUsers(http:Caller caller, http:Request req) returns error? {
         // Get 'name' query param
         string nameParam = req.getQueryParamValue("name").toString();
 
         log:printInfo("Searching for name: " + nameParam);
-
 
         // SQL query with parameterized input
         stream<database:User, sql:Error?> result = database:searchUsersByName(nameParam);
@@ -216,10 +245,11 @@ service /users on new http:Listener(8080) {
         res.setPayload(users);
         check caller->respond(res);
     }
-
 }
 
-// Main function
+# Main function to start the service.
+#
+# + return - Error if service fails to start
 public function main() returns error? {
     log:printInfo("User service started on port 8080");
 }
