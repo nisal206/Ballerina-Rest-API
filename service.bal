@@ -109,11 +109,6 @@ service /users on new http:Listener(8080) {
             return e;
         }
 
-        // from database:User user in resultStream
-        //     do {
-        //         userList.push(user);
-        //     };
-
         http:Response res = new;
         if userList.length() == 0 {
             res.statusCode = http:STATUS_OK;
